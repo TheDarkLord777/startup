@@ -293,7 +293,11 @@
                 statusDuplicate: "Takrorlangan",
                 remove: "O'chirish",
                 promptPlaceholder: "Yuklangan fayllar bo'yicha savol bering...",
-                settingsFunctionality: "Sozlamalar funksiyasi hali amalga oshirilmagan." 
+                settingsFunctionality: "Sozlamalar funksiyasi hali amalga oshirilmagan.",
+                uploadingRequest: "So'rov yuborilmoqda...",
+                responseReceived: "Javob qabul qilindi",
+                errorSendingRequest: "So'rov yuborishda xatolik:",
+                noProcessedFile: "Qayta ishlangan fayl topilmadi."
             },
             ru: {
                 mainTitle: "Приложение для Синхронного Перевода",
@@ -323,7 +327,11 @@
                 statusDuplicate: "Дубликат",
                 remove: "Удалить",
                 promptPlaceholder: "Задайте вопрос по загруженным файлам...",
-                settingsFunctionality: "Функция настроек еще не реализована." 
+                settingsFunctionality: "Функция настроек еще не реализована.",
+                uploadingRequest: "Отправка запроса...",
+                responseReceived: "Ответ получен",
+                errorSendingRequest: "Ошибка при отправке запроса:",
+                noProcessedFile: "Обработанный файл не найден."
             },
             en: {
                 mainTitle: "Synchronous Translation App",
@@ -353,7 +361,11 @@
                 statusDuplicate: "Duplicate",
                 remove: "Remove",
                 promptPlaceholder: "Ask a question about the uploaded files...",
-                settingsFunctionality: "Settings function is not yet implemented." 
+                settingsFunctionality: "Settings function is not yet implemented.",
+                uploadingRequest: "Sending request...",
+                responseReceived: "Response received",
+                errorSendingRequest: "Error sending request:",
+                noProcessedFile: "No processed file found."
             }
         };
 
@@ -496,11 +508,20 @@
                 updateFileStatus(listItemId, translations[currentLanguage].statusProcessing, 'warning');
 
                 if (xhr.status >= 200 && xhr.status < 300) { 
+                    // Store the processed WAV file name for later use
+                    window.lastProcessedWavFile = result.output;
+                    
                     displayMessage(`${translations[currentLanguage].uploadSuccess} Yangi fayl: ${result.output} (Hash: ${result.file_hash})`, 'success');
                     progressBar.classList.remove('bg-yellow-500'); 
                     progressBar.classList.add('bg-green-500'); 
                     progressBar.textContent = translations[currentLanguage].statusSuccess; 
                     updateFileStatus(listItemId, translations[currentLanguage].statusSuccess, 'success');
+                    
+                    // Update the list item with the WAV file information
+                    const listItem = document.getElementById(listItemId);
+                    if (listItem) {
+                        listItem.setAttribute('data-wav-file', result.output);
+                    }
                 } else { 
                     let errorMessage = result.detail || translations[currentLanguage].uploadFailed;
                     
@@ -545,8 +566,53 @@
         sendPromptButton.addEventListener('click', () => {
             const promptText = promptInput.value.trim();
             if (promptText) {
-                displayMessage(`Sizning so'rovingiz: "${promptText}" (Bu funksiya hali ishlamaydi)`, 'info');
-                promptInput.value = '';
+                // Find the most recent successfully processed file
+                const successItems = document.querySelectorAll('.status-badge[data-status-type="success"]');
+                if (successItems.length > 0) {
+                    const mostRecentItem = successItems[0].closest('li');
+                    const wavFile = mostRecentItem.getAttribute('data-wav-file');
+                    
+                    if (wavFile) {
+                        // Show loading state
+                        sendPromptButton.disabled = true;
+                        sendPromptButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        displayMessage(`${translations[currentLanguage].uploadingRequest}...`, 'info');
+                        
+                        // Create FormData for our backend endpoint
+                        const formData = new FormData();
+                        formData.append('wav_filename', wavFile);
+                        formData.append('question', promptText);
+                        
+                        // Send the request to our backend endpoint
+                        fetch('http://172.25.75.155:8000/upload_and_ask/', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            displayMessage(`${translations[currentLanguage].responseReceived}: ${data.answer || data.response || JSON.stringify(data)}`, 'success');
+                        })
+                        .catch(error => {
+                            displayMessage(`${translations[currentLanguage].errorSendingRequest} ${error.message}`, 'error');
+                            console.error('Error:', error);
+                        })
+                        .finally(() => {
+                            // Reset button state
+                            sendPromptButton.disabled = false;
+                            sendPromptButton.innerHTML = '<i class="fas fa-paper-plane text-lg"></i>';
+                            promptInput.value = '';
+                        });
+                    } else {
+                        displayMessage(translations[currentLanguage].noProcessedFile, 'error');
+                    }
+                } else {
+                    displayMessage(translations[currentLanguage].noProcessedFile, 'error');
+                }
             } else {
                 displayMessage("Iltimos, savolingizni kiriting.", 'error');
             }
@@ -581,6 +647,12 @@
                 </div>
                 <button class="remove-file-btn bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded-full ml-4" data-id="${id}" data-key="remove">${translations[currentLanguage].remove}</button>
             `;
+            
+            // Processed WAV filename attribute for successful uploads
+            if (statusType === 'success' && window.lastProcessedWavFile) {
+                listItem.setAttribute('data-wav-file', window.lastProcessedWavFile);
+            }
+            
             filesList.prepend(listItem); // Yangi fayllarni ro'yxatning boshiga qo'shish
 
             // "O'chirish" tugmasi uchun event listener qo'shish
