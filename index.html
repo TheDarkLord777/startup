@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinxron Tarjima Ilovasi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome ikonlari CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Inter fontini yuklash */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Yaxshiroq ko'rinish uchun maxsus uslublar */
+        .card {
+            background-color: #2a2a2a; /* To'q kulrang fon */
+            border-radius: 0.75rem; /* Rounded-xl */
+            padding: 1.5rem; /* p-6 */
+            color: #e0e0e0; /* Oqish matn */
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .message-success {
+            background-color: #d1fae5; /* Green-100 */
+            color: #065f46; /* Green-800 */
+        }
+        .message-error {
+            background-color: #fee2e2; /* Red-100 */
+            color: #991b1b; /* Red-800 */
+        }
+        .message-info {
+            background-color: #e0f2fe; /* Blue-100 */
+            color: #0c4a6e; /* Blue-800 */
+        }
+        /* Custom file input styling */
+        .custom-file-input {
+            display: none; /* Asl inputni yashirish */
+        }
+        .custom-file-label {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between; /* Yuqori va pastki qism orasidagi bo'sh joy */
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        /* Progress bar ichidagi matnni markazga joylash */
+        #progressBar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Dark mode styles */
+        body.dark {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        body.dark .bg-gray-900 { background-color: #1a1a1a; }
+        body.dark .bg-gray-800 { background-color: #2a2a2a; }
+        body.dark .text-white { color: #e0e0e0; }
+        body.dark .text-gray-400 { color: #b0b0b0; }
+        body.dark .bg-gray-700 { background-color: #3a3a3a; }
+        body.dark .placeholder-gray-400::placeholder { color: #b0b0b0; }
+        body.dark .border-gray-700 { border-color: #4a4a4a; }
+        body.dark .card { background-color: #3a3a3a; }
+        body.dark .card:hover { box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); }
+        body.dark .message-success { background-color: #14532d; color: #d1fae5; }
+        body.dark .message-error { background-color: #7f1d1d; color: #fee2e2; }
+        body.dark .message-info { background-color: #0c4a6e; color: #e0f2fe; }
+        body.dark .bg-green-500 { background-color: #22c55e; } /* Tailwind green-500 */
+        body.dark .bg-yellow-500 { background-color: #eab308; } /* Tailwind yellow-500 */
+        body.dark .bg-orange-500 { background-color: #f97316; } /* Tailwind orange-500 */
+        body.dark .bg-red-500 { background-color: #ef4444; }   /* Tailwind red-500 */
+        body.dark .bg-indigo-600 { background-color: #4f46e5; } /* Tailwind indigo-600 */
+        body.dark .bg-indigo-700 { background-color: #4338ca; } /* Tailwind indigo-700 */
+
+        /* Flag buttons styles and 3D carousel effect */
+        .language-flags-container {
+            display: flex;
+            justify-content: center; /* Flags are absolutely positioned, so this centers the container itself */
+            align-items: center;
+            height: 40px; /* Needs a defined height for vertical centering of items */
+            position: relative; /* Crucial for absolute positioning of child flags */
+            width: 150px; /* Adjust based on desired flag spacing and overall width */
+        }
+        
+        .flag-button {
+            position: absolute; /* Allows precise positioning for 3D effect */
+            width: 40px; /* Adjust as needed */
+            height: 30px; /* Adjust as needed */
+            border-radius: 0.25rem; /* rounded-md */
+            cursor: pointer;
+            border: 2px solid transparent; /* default border */
+            background-size: cover; /* Bayroq rasmini to'liq qoplash */
+            background-position: center; /* Rasmni markazga joylash */
+            background-repeat: no-repeat; /* Rasmni takrorlamaslik */
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, border-color 0.3s ease-in-out, z-index 0.3s; /* Add z-index to transition */
+            opacity: 0.7; /* Default opacity for non-active flags */
+            top: 50%; /* Vertical centering */
+            left: 50%; /* Initial horizontal positioning before transform */
+            transform: translate(-50%, -50%); /* Centering trick */
+            z-index: 1; /* Default z-index */
+        }
+
+        .flag-button:hover {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1.05); /* Slight scale on hover */
+        }
+
+        .flag-button.active {
+            opacity: 1;
+            border-color: #4f46e5; /* indigo-600 border for active flag */
+            transform: translate(-50%, -50%) scale(1.2); /* Make active flag larger */
+            z-index: 3; /* Bring active to front */
+        }
+
+        /* Positions for prev/next flags to create the 3D carousel look */
+        .flag-button.prev-flag {
+            transform: translate(calc(-50% - 55px), -50%) rotateY(15deg) scale(0.9); /* Move left, rotate, scale down */
+            opacity: 0.7;
+            z-index: 2; /* Slightly above other non-active */
+        }
+
+        .flag-button.next-flag {
+            transform: translate(calc(-50% + 55px), -50%) rotateY(-15deg) scale(0.9); /* Move right, rotate, scale down */
+            opacity: 0.7;
+            z-index: 2; /* Slightly above other non-active */
+        }
+
+        /* SVG bayroq URL manziliga o'zgartirildi */
+        .flag-uz { background-image: url('https://flagcdn.com/uz.svg'); }
+        .flag-ru { background-image: url('https://flagcdn.com/ru.svg'); }
+        .flag-en { background-image: url('https://flagcdn.com/gb.svg'); } /* Using GB for English */
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center justify-center p-4 transition-colors duration-300">
+    <!-- Yuqori o'ng burchakdagi boshqaruvlar -->
+    <div class="fixed top-4 right-4 flex items-center space-x-4 z-50">
+        <!-- Settings Button -->
+        <button id="settingsButton" class="text-gray-400 hover:text-white transition-colors duration-300">
+            <i class="fas fa-cog text-xl"></i>
+        </button>
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="text-gray-400 hover:text-white transition-colors duration-300">
+            <i class="fas fa-sun text-xl" id="themeIcon"></i>
+        </button>
+        <!-- Language Selector (Flags - 3D Carousel Style) -->
+        <div class="language-flags-container">
+            <button class="flag-button flag-uz" data-lang="uz" title="O'zbekcha"></button>
+            <button class="flag-button flag-ru" data-lang="ru" title="Русский"></button>
+            <button class="flag-button flag-en" data-lang="en" title="English"></button>
+        </div>
+    </div>
+
+    <div class="w-full max-w-2xl bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700 transition-colors duration-300">
+        <!-- Ilova nomi markazda -->
+        <div class="flex justify-center items-center mb-8">
+            <h1 class="text-4xl font-bold text-white" data-key="mainTitle">Sinxron Tarjima Ilovasi</h1>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Yuklash kartochkasi -->
+            <div class="card relative flex flex-col justify-between items-start">
+                <label for="fileInput" class="custom-file-label">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-upload text-3xl text-gray-400 mr-3"></i>
+                        <div>
+                            <span class="text-white text-lg font-semibold" data-key="uploadTitle">Yuklash</span>
+                            <span class="block text-gray-400 text-sm" data-key="uploadDescription">Fayl, audio, video</span>
+                        </div>
+                    </div>
+                    <span class="absolute top-3 right-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full" data-key="uploadBadge">Asosiy</span>
+                </label>
+                <input type="file" id="fileInput" name="file" class="custom-file-input">
+            </div>
+
+            <!-- AI Tarjima kartochkasi -->
+            <div class="card flex flex-col justify-between items-start" id="aiTranslateCard">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-language text-3xl text-gray-400 mr-3"></i>
+                    <div>
+                        <span class="text-white text-lg font-semibold" data-key="aiTranslateTitle">AI Tarjima</span>
+                        <span class="block text-gray-400 text-sm" data-key="aiTranslateDescription">Audioga sinxron tarjima</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subtitrlash va ovozli tarjima kartochkasi -->
+            <div class="card flex flex-col justify-between items-start" id="subtitleAudioCard">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-closed-captioning text-3xl text-gray-400 mr-3"></i>
+                    <div>
+                        <span class="text-white text-lg font-semibold" data-key="subtitleAudioTitle">Subtitr & Ovoz</span>
+                        <span class="block text-gray-400 text-sm" data-key="subtitleAudioDescription">Videoga subtitr va dublyaj</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fayl nomi va yuklash progressi -->
+        <div id="file-name-display" class="text-gray-400 text-sm text-center mb-4" data-key="noFileSelected">Fayl tanlanmagan.</div>
+        <div id="progressContainer" class="hidden w-full bg-gray-700 rounded-full h-4">
+            <div id="progressBar" class="bg-green-500 h-4 rounded-full text-xs font-bold text-white text-center flex items-center justify-center" style="width: 0%">0%</div>
+        </div>
+
+        <div id="responseMessage" class="message-box hidden">
+            <!-- Javob xabarlari shu yerda ko'rsatiladi -->
+        </div>
+
+        <!-- Yuklangan fayllar ro'yxati -->
+        <div id="uploadedFilesList" class="mt-8">
+            <h2 class="text-xl font-bold text-white mb-4" data-key="uploadedFilesTitle">Yuklangan fayllar</h2>
+            <ul id="filesList" class="space-y-3">
+                <!-- Yuklangan fayllar shu yerda qo'shiladi -->
+            </ul>
+        </div>
+
+        <!-- Yangi prompt kiritish maydoni (ro'yxatda fayllar bo'lganda ko'rinadi) -->
+        <div class="relative flex items-center mt-6 hidden" id="promptInputContainer">
+            <input type="text" placeholder="Yuklangan fayllar bo'yicha savol bering..." 
+                   class="flex-grow bg-gray-700 text-white placeholder-gray-400 py-3 px-5 
+                          rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                          focus:border-transparent text-lg pr-12" id="promptInput" data-key="promptPlaceholder">
+            <button id="sendPromptButton" 
+                    class="absolute right-0 top-0 bottom-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 
+                           text-white rounded-full flex items-center justify-center 
+                           transition duration-300 ease-in-out transform hover:scale-105">
+                <i class="fas fa-paper-plane text-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // DOM elementlarini tanlab olish
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const responseMessage = document.getElementById('responseMessage');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const aiTranslateCard = document.getElementById('aiTranslateCard');
+        const subtitleAudioCard = document.getElementById('subtitleAudioCard');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const filesList = document.getElementById('filesList');
+        const promptInputContainer = document.getElementById('promptInputContainer');
+        const promptInput = document.getElementById('promptInput');
+        const sendPromptButton = document.getElementById('sendPromptButton');
+        const settingsButton = document.getElementById('settingsButton'); 
+        const flagButtons = document.querySelectorAll('.flag-button');
+
+        // Tarjimalar obyekti
+        const translations = {
+            uz: {
+                mainTitle: "Sinxron Tarjima Ilovasi",
+                uploadTitle: "Yuklash",
+                uploadDescription: "Fayl, audio, video",
+                uploadBadge: "Asosiy",
+                aiTranslateTitle: "AI Tarjima",
+                aiTranslateDescription: "Audioga sinxron tarjima",
+                subtitleAudioTitle: "Subtitr & Ovoz",
+                subtitleAudioDescription: "Videoga subtitr va dublyaj",
+                noFileSelected: "Fayl tanlanmagan.",
+                fileSelected: "Tanlangan fayl:",
+                uploadingFile: "Fayl yuklanmoqda...",
+                uploadCompleteProcessing: "Yuklash tugallandi, serverda qayta ishlanmoqda...",
+                uploadSuccess: "Fayl muvaffaqiyatli yuklandi va qayta ishlandi!",
+                uploadFailed: "Yuklashda xato yuz berdi:",
+                unexpectedResponse: "Serverdan kutilmagan javob:",
+                duplicateFile: "Bu fayl allaqachon qayta ishlangan.",
+                networkError: "Tarmoq xatosi: Serverga ulanib bo'lmadi yoki kutilmagan muammo.",
+                aiTranslateFunctionality: "AI Tarjima funksiyasi hali amalga oshirilmagan.",
+                subtitleAudioFunctionality: "Subtitrlash va ovozli tarjima funksiyasi hali amalga oshirilmagan.",
+                uploadedFilesTitle: "Yuklangan fayllar",
+                statusUploading: "Yuklanmoqda",
+                statusProcessing: "Ishlanmoqda",
+                statusSuccess: "Muvaffaqiyatli",
+                statusError: "Xato",
+                statusDuplicate: "Takrorlangan",
+                remove: "O'chirish",
+                promptPlaceholder: "Yuklangan fayllar bo'yicha savol bering...",
+                settingsFunctionality: "Sozlamalar funksiyasi hali amalga oshirilmagan." 
+            },
+            ru: {
+                mainTitle: "Приложение для Синхронного Перевода",
+                uploadTitle: "Загрузить",
+                uploadDescription: "Файл, аудио, видео",
+                uploadBadge: "Основное",
+                aiTranslateTitle: "AI Перевод",
+                aiTranslateDescription: "Синхронный перевод аудио",
+                subtitleAudioTitle: "Субтитры и Аудио",
+                subtitleAudioDescription: "Субтитры и дубляж для видео",
+                noFileSelected: "Файл не выбран.",
+                fileSelected: "Выбранный файл:",
+                uploadingFile: "Файл загружается...",
+                uploadCompleteProcessing: "Загрузка завершена, обрабатывается на сервере...",
+                uploadSuccess: "Файл успешно загружен и обработан!",
+                uploadFailed: "Ошибка при загрузке:",
+                unexpectedResponse: "Неожиданный ответ от сервера:",
+                duplicateFile: "Этот файл уже был обработан.",
+                networkError: "Ошибка сети: Не удалось подключиться к серверу или произошла непредвиденная проблема.",
+                aiTranslateFunctionality: "Функция AI перевода еще не реализована.",
+                subtitleAudioFunctionality: "Функция субтитров и аудио перевода еще не реализована.",
+                uploadedFilesTitle: "Загруженные файлы",
+                statusUploading: "Загружается",
+                statusProcessing: "Обрабатывается",
+                statusSuccess: "Успешно",
+                statusError: "Ошибка",
+                statusDuplicate: "Дубликат",
+                remove: "Удалить",
+                promptPlaceholder: "Задайте вопрос по загруженным файлам...",
+                settingsFunctionality: "Функция настроек еще не реализована." 
+            },
+            en: {
+                mainTitle: "Synchronous Translation App",
+                uploadTitle: "Upload",
+                uploadDescription: "File, audio, video",
+                uploadBadge: "Primary",
+                aiTranslateTitle: "AI Translate",
+                aiTranslateDescription: "Synchronous audio translation",
+                subtitleAudioTitle: "Subtitle & Audio",
+                subtitleAudioDescription: "Subtitles and dubbing for video",
+                noFileSelected: "No file selected.",
+                fileSelected: "Selected file:",
+                uploadingFile: "Uploading file...",
+                uploadCompleteProcessing: "Upload complete, processing on server...",
+                uploadSuccess: "File successfully uploaded and processed!",
+                uploadFailed: "File upload failed:",
+                unexpectedResponse: "Unexpected response from server:",
+                duplicateFile: "This file has already been processed.",
+                networkError: "Network error: Could not connect to server or an unexpected issue occurred.",
+                aiTranslateFunctionality: "AI Translation function is not yet implemented.",
+                subtitleAudioFunctionality: "Subtitling and audio translation function is not yet implemented.",
+                uploadedFilesTitle: "Uploaded files",
+                statusUploading: "Uploading",
+                statusProcessing: "Processing",
+                statusSuccess: "Success",
+                statusError: "Error",
+                statusDuplicate: "Duplicate",
+                remove: "Remove",
+                promptPlaceholder: "Ask a question about the uploaded files...",
+                settingsFunctionality: "Settings function is not yet implemented." 
+            }
+        };
+
+        const languages = ['uz', 'ru', 'en'];
+        let currentLanguage = localStorage.getItem('language') || 'uz';
+        let currentTheme = localStorage.getItem('theme') || 'dark'; // Default theme
+        let currentLanguageIndex = languages.indexOf(currentLanguage);
+
+        // Tilni o'zgartirish funksiyasi
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('language', lang);
+            currentLanguageIndex = languages.indexOf(lang); // Update current index
+            updateFlagPositions(); // Update flag positions based on new active language
+
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.getAttribute('data-key');
+                if (translations[currentLanguage] && translations[currentLanguage][key]) {
+                    if (element.tagName === 'INPUT' && element.hasAttribute('placeholder')) {
+                        element.setAttribute('placeholder', translations[currentLanguage][key]);
+                    } else {
+                        element.textContent = translations[currentLanguage][key];
+                    }
+                }
+            });
+            // Fayl tanlash xabarini yangilash
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = `${translations[currentLanguage].fileSelected} ${fileInput.files[0].name} (${(fileInput.files[0].size / (1024 * 1024)).toFixed(2)} MB)`;
+            } else {
+                fileNameDisplay.textContent = translations[currentLanguage].noFileSelected;
+            }
+        }
+
+        // Temani o'zgartirish funksiyasi
+        function setTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('theme', theme);
+            if (theme === 'dark') {
+                document.body.classList.add('dark');
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            } else {
+                document.body.classList.remove('dark');
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            }
+        }
+
+        // Bayroq tugmalarining holatini yangilash funksiyasi (3D karusel effekti uchun)
+        function updateFlagPositions() {
+            flagButtons.forEach(button => {
+                button.classList.remove('active', 'prev-flag', 'next-flag'); // Avvalgi klasslarni tozalash
+                const lang = button.dataset.lang;
+                const index = languages.indexOf(lang);
+
+                if (index === currentLanguageIndex) {
+                    button.classList.add('active');
+                } else if (index === (currentLanguageIndex - 1 + languages.length) % languages.length) {
+                    button.classList.add('prev-flag');
+                } else if (index === (currentLanguageIndex + 1) % languages.length) {
+                    button.classList.add('next-flag');
+                }
+            });
+        }
+
+        // Ilovani yuklashda til va temani o'rnatish
+        document.addEventListener('DOMContentLoaded', () => {
+            setLanguage(currentLanguage); // Tilni o'rnatish va bayroqlarni yangilash
+            setTheme(currentTheme);
+            checkFilesListAndTogglePromptInput(); // Sahifa yuklanganda tekshirish
+        });
+
+        // Tilni o'zgartirish tinglovchisi (bayroq tugmalari uchun)
+        flagButtons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                setLanguage(event.target.dataset.lang);
+            });
+        });
+
+        // Temani o'zgartirish tinglovchisi
+        themeToggle.addEventListener('click', () => {
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+        // Sozlamalar tugmasini bosish hodisasi
+        settingsButton.addEventListener('click', () => {
+            displayMessage(translations[currentLanguage].settingsFunctionality, 'info');
+        });
+
+        // Fayl tanlanganida avtomatik yuklashni boshlash
+        fileInput.addEventListener('change', async () => {
+            const file = fileInput.files[0]; 
+
+            if (!file) {
+                // Agar fayl tanlanmagan bo'lsa (masalan, fayl tanlash dialogi bekor qilinsa)
+                fileNameDisplay.textContent = translations[currentLanguage].noFileSelected;
+                return;
+            }
+
+            fileNameDisplay.textContent = `${translations[currentLanguage].fileSelected} ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+            clearMessages(); 
+            
+            const listItemId = `file-${Date.now()}`;
+            addFileToList(file.name, translations[currentLanguage].statusUploading, 'info', listItemId);
+            
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            displayMessage(translations[currentLanguage].uploadingFile, 'info');
+
+            const formData = new FormData();
+            formData.append('file', file); 
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.open('POST', 'http://localhost:8000/upload/', true);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percent = (event.loaded / event.total) * 100;
+                    progressBar.style.width = `${percent.toFixed(2)}%`;
+                    progressBar.textContent = `${translations[currentLanguage].statusUploading}: ${percent.toFixed(2)}%`; 
+                    updateFileStatus(listItemId, `${translations[currentLanguage].statusUploading}: ${percent.toFixed(2)}%`, 'info');
+                }
+            };
+
+            xhr.onload = () => {
+                let result;
+                try {
+                    result = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    displayMessage(`${translations[currentLanguage].unexpectedResponse} ${xhr.responseText}`, 'error');
+                    console.error("JSON parse xatosi:", e);
+                    updateFileStatus(listItemId, translations[currentLanguage].statusError, 'error');
+                    return;
+                }
+
+                progressBar.style.width = '100%'; 
+                progressBar.textContent = translations[currentLanguage].uploadCompleteProcessing;
+                updateFileStatus(listItemId, translations[currentLanguage].statusProcessing, 'warning');
+
+
+                if (xhr.status >= 200 && xhr.status < 300) { 
+                    displayMessage(`${translations[currentLanguage].uploadSuccess} Yangi fayl: ${result.output} (Hash: ${result.file_hash})`, 'success');
+                    progressBar.classList.remove('bg-yellow-500'); 
+                    progressBar.classList.add('bg-green-500'); 
+                    progressBar.textContent = translations[currentLanguage].statusSuccess; 
+                    updateFileStatus(listItemId, translations[currentLanguage].statusSuccess, 'success');
+                } else { 
+                    let errorMessage = result.detail || translations[currentLanguage].uploadFailed;
+                    
+                    if (xhr.status === 409) {
+                        displayMessage(`${translations[currentLanguage].uploadFailed} ${translations[currentLanguage].duplicateFile} (Hash: ${result.file_hash})`, 'info'); 
+                        progressBar.classList.remove('bg-yellow-500');
+                        progressBar.classList.add('bg-orange-500'); 
+                        progressBar.textContent = translations[currentLanguage].statusDuplicate;
+                        updateFileStatus(listItemId, translations[currentLanguage].statusDuplicate, 'warning');
+                    } else {
+                        displayMessage(`${translations[currentLanguage].uploadFailed} ${errorMessage}`, 'error');
+                        progressBar.classList.remove('bg-yellow-500');
+                        progressBar.classList.add('bg-red-500'); 
+                        progressBar.textContent = translations[currentLanguage].statusError;
+                        updateFileStatus(listItemId, translations[currentLanguage].statusError, 'error');
+                    }
+                }
+            };
+
+            xhr.onerror = () => {
+                displayMessage(translations[currentLanguage].networkError, 'error');
+                console.error("XHR yuklash xatosi:", xhr.statusText);
+                progressBar.classList.remove('bg-blue-500', 'bg-yellow-500');
+                progressBar.classList.add('bg-red-500');
+                progressBar.textContent = translations[currentLanguage].networkError;
+                updateFileStatus(listItemId, translations[currentLanguage].statusError, 'error');
+            };
+
+            xhr.send(formData);
+        });
+
+        // Yangi kartochkalar uchun event listenerlar
+        aiTranslateCard.addEventListener('click', () => {
+            displayMessage(translations[currentLanguage].aiTranslateFunctionality, 'info');
+        });
+
+        subtitleAudioCard.addEventListener('click', () => {
+            displayMessage(translations[currentLanguage].subtitleAudioFunctionality, 'info');
+        });
+
+        // Prompt yuborish tugmasi
+        sendPromptButton.addEventListener('click', () => {
+            const promptText = promptInput.value.trim();
+            if (promptText) {
+                displayMessage(`Sizning so'rovingiz: "${promptText}" (Bu funksiya hali ishlamaydi)`, 'info');
+                promptInput.value = '';
+            } else {
+                displayMessage("Iltimos, savolingizni kiriting.", 'error');
+            }
+        });
+
+        // Xabar ko'rsatish funksiyasi
+        function displayMessage(message, type) {
+            responseMessage.classList.remove('hidden', 'message-success', 'message-error', 'message-info', 'message-warning');
+            responseMessage.textContent = message;
+            responseMessage.classList.add(`message-${type}`);
+        }
+
+        // Xabarlarni tozalash funksiyasi
+        function clearMessages() {
+            responseMessage.classList.add('hidden');
+            responseMessage.classList.remove('message-success', 'message-error', 'message-info', 'message-warning');
+            responseMessage.textContent = '';
+        }
+
+        // Yuklangan fayllar ro'yxatiga element qo'shish
+        function addFileToList(fileName, statusText, statusType, id) {
+            const listItem = document.createElement('li');
+            listItem.id = id;
+            listItem.className = 'flex items-center justify-between bg-gray-700 p-3 rounded-md shadow-sm';
+            listItem.innerHTML = `
+                <div class="flex-grow flex items-center">
+                    <i class="fas fa-file-alt text-gray-400 mr-3"></i>
+                    <span class="text-white font-medium">${fileName}</span>
+                    <span class="text-xs ml-3 px-2 py-1 rounded-full status-badge text-${statusType}-800 bg-${statusType}-200" data-status-type="${statusType}">
+                        ${statusText}
+                    </span>
+                </div>
+                <button class="remove-file-btn bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded-full ml-4" data-id="${id}" data-key="remove">${translations[currentLanguage].remove}</button>
+            `;
+            filesList.prepend(listItem); // Yangi fayllarni ro'yxatning boshiga qo'shish
+
+            // "O'chirish" tugmasi uchun event listener qo'shish
+            listItem.querySelector('.remove-file-btn').addEventListener('click', (event) => {
+                const idToRemove = event.target.dataset.id;
+                document.getElementById(idToRemove).remove();
+                displayMessage("Fayl ro'yxatdan olib tashlandi (serverdan emas).", 'info');
+                checkFilesListAndTogglePromptInput(); // Ro'yxat o'zgarganda tekshirish
+            });
+
+            checkFilesListAndTogglePromptInput(); // Yangi fayl qo'shilganda tekshirish
+        }
+
+        // Yuklangan fayl holatini yangilash
+        function updateFileStatus(id, newStatusText, newStatusType) {
+            const listItem = document.getElementById(id);
+            if (listItem) {
+                const statusBadge = listItem.querySelector('.status-badge');
+                statusBadge.textContent = newStatusText;
+                // Rang klasslarini yangilash
+                const oldStatusType = statusBadge.getAttribute('data-status-type');
+                statusBadge.classList.remove(`text-${oldStatusType}-800`, `bg-${oldStatusType}-200`);
+                statusBadge.classList.add(`text-${newStatusType}-800`, `bg-${newStatusType}-200`);
+                statusBadge.setAttribute('data-status-type', newStatusType);
+
+                // Dark mode'da ranglar
+                if (currentTheme === 'dark') {
+                    if (newStatusType === 'success') {
+                        statusBadge.classList.remove('bg-green-200', 'text-green-800');
+                        statusBadge.classList.add('bg-green-700', 'text-green-200');
+                    } else if (newStatusType === 'error') {
+                        statusBadge.classList.remove('bg-red-200', 'text-red-800');
+                        statusBadge.classList.add('bg-red-700', 'text-red-200');
+                    } else if (newStatusType === 'info') {
+                        statusBadge.classList.remove('bg-blue-200', 'text-blue-800');
+                        statusBadge.classList.add('bg-blue-700', 'text-blue-200');
+                    } else if (newStatusType === 'warning') { // Orange for duplicate/processing
+                        statusBadge.classList.remove('bg-orange-200', 'text-orange-800');
+                        statusBadge.classList.add('bg-orange-700', 'text-orange-200');
+                    }
+                } else { // Light mode
+                    if (newStatusType === 'success') {
+                        statusBadge.classList.add('bg-green-200', 'text-green-800');
+                        statusBadge.classList.remove('bg-green-700', 'text-green-200');
+                    } else if (newStatusType === 'error') {
+                        statusBadge.classList.add('bg-red-200', 'text-red-800');
+                        statusBadge.classList.remove('bg-red-700', 'text-red-200');
+                    } else if (newStatusType === 'info') {
+                        statusBadge.classList.add('bg-blue-200', 'text-blue-800');
+                        statusBadge.classList.remove('bg-blue-700', 'text-blue-200');
+                    } else if (newStatusType === 'warning') {
+                        statusBadge.classList.add('bg-orange-200', 'text-orange-800');
+                        statusBadge.classList.remove('bg-orange-700', 'text-orange-200');
+                    }
+                }
+            }
+        }
+
+        // Yuklangan fayllar ro'yxati bo'shligini tekshirish va prompt inputini ko'rsatish/yashirish
+        function checkFilesListAndTogglePromptInput() {
+            if (filesList.children.length > 0) {
+                promptInputContainer.classList.remove('hidden');
+            } else {
+                promptInputContainer.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
