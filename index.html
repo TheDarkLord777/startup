@@ -469,7 +469,7 @@
 
             const xhr = new XMLHttpRequest();
             
-            xhr.open('POST', 'https://startup.share.zrok.io/upload/', true);
+            xhr.open('POST', 'http://172.25.75.155:8000/upload/', true);
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
