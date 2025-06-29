@@ -481,7 +481,7 @@
 
             const xhr = new XMLHttpRequest();
             
-            xhr.open('POST', 'http://localhost:8000/upload/', true);
+            xhr.open('POST', 'http://34.51.187.94:8000/upload/', true);
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
@@ -584,7 +584,7 @@
                         formData.append('question', promptText);
                         
                         // Send the request to our backend endpoint
-                        fetch('http://localhost:8000/upload_and_ask/', {
+                        fetch('http://34.51.187.94:8000/upload_and_ask/', {
                             method: 'POST',
                             body: formData
                         })
